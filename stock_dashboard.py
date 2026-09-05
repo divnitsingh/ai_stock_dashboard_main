@@ -249,7 +249,7 @@ class StockAnalyzer:
         if len(feature_cols) < 5:
             return None
 
-        X = df[feature_cols].fillna(method='ffill').fillna(method='bfill')
+        X = df[feature_cols].ffill().bfill()
         y = df['Close'].shift(-1)  # Predict next day's close
 
         # Remove last row (no target) and any remaining NaN
@@ -399,7 +399,7 @@ class StockAnalyzer:
 # -----------------------------
 # Charting
 # -----------------------------
-def create_advanced_chart(data, symbol):
+def create_advanced_chart(data, symbol, show_bollinger=True):
     """Create advanced candlestick chart with technical indicators."""
     fig = make_subplots(
         rows=4, cols=1,
@@ -436,8 +436,8 @@ def create_advanced_chart(data, symbol):
                 row=1, col=1
             )
 
-    # Bollinger Bands
-    if all(col in data.columns for col in ['BB_upper', 'BB_lower']):
+    # Bollinger Bands (optional)
+    if show_bollinger and all(col in data.columns for col in ['BB_upper', 'BB_lower']):
         fig.add_trace(
             go.Scatter(x=data.index, y=data['BB_upper'],
                        line=dict(color='rgba(128,128,128,0.5)', width=1), name='BB Upper',
@@ -649,6 +649,7 @@ def main():
     st.sidebar.subheader("🔧 Analysis Options")
     show_prediction = st.sidebar.checkbox("🔮 ML Price Prediction", value=True)
     show_technical = st.sidebar.checkbox("📈 Technical Charts", value=True)
+    show_bollinger = st.sidebar.checkbox("〰️ Bollinger Bands", value=True, help="Show or hide the Bollinger Band overlay on the price chart.")
     show_performance = st.sidebar.checkbox("📊 Performance Metrics", value=True)
     show_analysis = st.sidebar.checkbox("🧠 AI Market Analysis", value=True)
 
@@ -732,7 +733,7 @@ def main():
     if show_technical:
         st.subheader("📈 Advanced Technical Analysis")
         with st.spinner("Creating advanced charts..."):
-            chart = create_advanced_chart(data, display_name)
+            chart = create_advanced_chart(data, display_name, show_bollinger=show_bollinger)
             st.plotly_chart(chart, use_container_width=True)
 
     # Performance Metrics
