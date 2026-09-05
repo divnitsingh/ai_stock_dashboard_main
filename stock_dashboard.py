@@ -249,7 +249,7 @@ class StockAnalyzer:
         if len(feature_cols) < 5:
             return None
 
-        X = df[feature_cols].ffill().bfill()
+        X = df[feature_cols].fillna(method='ffill').fillna(method='bfill')
         y = df['Close'].shift(-1)  # Predict next day's close
 
         # Remove last row (no target) and any remaining NaN
@@ -649,7 +649,7 @@ def main():
     st.sidebar.subheader("🔧 Analysis Options")
     show_prediction = st.sidebar.checkbox("🔮 ML Price Prediction", value=True)
     show_technical = st.sidebar.checkbox("📈 Technical Charts", value=True)
-    show_bollinger = st.sidebar.checkbox("〰️ Bollinger Bands", value=True, help="Show or hide the Bollinger Band overlay on the price chart.")
+    show_bollinger = st.sidebar.checkbox("〰️ Show Bollinger Bands", value=True, help="Turn the Bollinger Bands overlay on or off in the price chart.")
     show_performance = st.sidebar.checkbox("📊 Performance Metrics", value=True)
     show_analysis = st.sidebar.checkbox("🧠 AI Market Analysis", value=True)
 
