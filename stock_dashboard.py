@@ -249,7 +249,7 @@ class StockAnalyzer:
         if len(feature_cols) < 5:
             return None
 
-        X = df[feature_cols].fillna(method='ffill').fillna(method='bfill')
+        X = df[feature_cols].ffill().bfill()
         y = df['Close'].shift(-1)  # Predict next day's close
 
         # Remove last row (no target) and any remaining NaN
@@ -399,7 +399,7 @@ class StockAnalyzer:
 # -----------------------------
 # Charting
 # -----------------------------
-def create_advanced_chart(data, symbol, show_bollinger=True):
+def create_advanced_chart(data, symbol):
     """Create advanced candlestick chart with technical indicators."""
     fig = make_subplots(
         rows=4, cols=1,
@@ -436,19 +436,32 @@ def create_advanced_chart(data, symbol, show_bollinger=True):
                 row=1, col=1
             )
 
-    # Bollinger Bands (optional)
-    if show_bollinger and all(col in data.columns for col in ['BB_upper', 'BB_lower']):
+    # Bollinger Bands
+    # Both band traces are placed in the same legend group so the single
+    # 'Bollinger Bands' legend item toggles the complete band (upper, lower, fill).
+    if all(col in data.columns for col in ['BB_upper', 'BB_lower']):
         fig.add_trace(
-            go.Scatter(x=data.index, y=data['BB_upper'],
-                       line=dict(color='rgba(128,128,128,0.5)', width=1), name='BB Upper',
-                       showlegend=False),
+            go.Scatter(
+                x=data.index,
+                y=data['BB_upper'],
+                line=dict(color='rgba(128,128,128,0.5)', width=1),
+                name='Bollinger Bands',
+                legendgroup='bollinger_bands',
+                showlegend=True
+            ),
             row=1, col=1
         )
         fig.add_trace(
-            go.Scatter(x=data.index, y=data['BB_lower'],
-                       line=dict(color='rgba(128,128,128,0.5)', width=1), name='BB Lower',
-                       fill='tonexty', fillcolor='rgba(128,128,128,0.1)',
-                       showlegend=False),
+            go.Scatter(
+                x=data.index,
+                y=data['BB_lower'],
+                line=dict(color='rgba(128,128,128,0.5)', width=1),
+                name='BB Lower',
+                legendgroup='bollinger_bands',
+                fill='tonexty',
+                fillcolor='rgba(128,128,128,0.1)',
+                showlegend=False
+            ),
             row=1, col=1
         )
 
@@ -517,6 +530,9 @@ def create_advanced_chart(data, symbol, show_bollinger=True):
         height=900,
         showlegend=True,
         template='plotly_dark',
+        # Clicking the Bollinger Bands legend item toggles both band traces
+        # together, while all ungrouped indicators remain individually toggleable.
+        legend=dict(groupclick='togglegroup'),
         font=dict(size=10)
     )
 
@@ -649,7 +665,6 @@ def main():
     st.sidebar.subheader("🔧 Analysis Options")
     show_prediction = st.sidebar.checkbox("🔮 ML Price Prediction", value=True)
     show_technical = st.sidebar.checkbox("📈 Technical Charts", value=True)
-    show_bollinger = st.sidebar.checkbox("〰️ Show Bollinger Bands", value=True, help="Turn the Bollinger Bands overlay on or off in the price chart.")
     show_performance = st.sidebar.checkbox("📊 Performance Metrics", value=True)
     show_analysis = st.sidebar.checkbox("🧠 AI Market Analysis", value=True)
 
@@ -733,7 +748,7 @@ def main():
     if show_technical:
         st.subheader("📈 Advanced Technical Analysis")
         with st.spinner("Creating advanced charts..."):
-            chart = create_advanced_chart(data, display_name, show_bollinger=show_bollinger)
+            chart = create_advanced_chart(data, display_name)
             st.plotly_chart(chart, use_container_width=True)
 
     # Performance Metrics
